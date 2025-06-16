@@ -79,6 +79,7 @@ utils/                      # Utility functions
 ```
 
 ## API Endpoints
+[Postman Reference](https://oms999-6301.postman.co/workspace/OMS_assignment~251230bb-c018-4e54-b9ae-92431872fb81/collection/29502646-34be816b-2f58-4d02-911c-0ac97d310b5b?action=share&creator=29502646)
 
 ### Buildings
 
