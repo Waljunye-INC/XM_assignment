@@ -1,0 +1,186 @@
+openapi: 3.0.3
+info:
+  title: Buildings & Apartments API
+  version: "1.0.0"
+  description: API for managing buildings and apartments
+
+servers:
+  - url: http://localhost:8012
+
+paths:
+  /buildings:
+    get:
+      summary: Get list of buildings
+      responses:
+        '200':
+          description: List of buildings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Building'
+    post:
+      summary: Create or update a building
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Building'
+      responses:
+        '200':
+          description: Building saved
+
+  /buildings/{id}:
+    get:
+      summary: Get building by ID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Building data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Building'
+        '404':
+          description: Not found
+
+    delete:
+      summary: Delete a building
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Building deleted
+        '404':
+          description: Not found
+
+  /apartments:
+    get:
+      summary: Get list of apartments
+      responses:
+        '200':
+          description: List of apartments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Apartment'
+    post:
+      summary: Create or update an apartment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Apartment'
+      responses:
+        '200':
+          description: Apartment saved
+
+  /apartments/{id}:
+    get:
+      summary: Get apartment by ID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Apartment data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Apartment'
+        '404':
+          description: Not found
+
+    delete:
+      summary: Delete an apartment
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Apartment deleted
+        '404':
+          description: Not found
+
+  /apartments/building/{buildingId}:
+    get:
+      summary: Get apartments by building ID
+      parameters:
+        - in: path
+          name: buildingId
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: List of apartments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Apartment'
+
+components:
+  schemas:
+    Building:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Sunshine Complex"
+        address:
+          type: string
+          example: "123 Sample St, City"
+      required:
+        - id
+        - name
+        - address
+    Apartment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        buildingID:
+          type: integer
+          example: 1
+        number:
+          type: string
+          example: "45"
+        floor:
+          type: integer
+          example: 5
+        sqMeters:
+          type: number
+          format: float
+          example: 38.5
+      required:
+        - id
+        - buildingID
+        - number
+        - floor
+        - sqMeters
