@@ -1,3 +1,4 @@
 /.env
 /.sqlboiler.toml
 /.idea
+/.env.docker

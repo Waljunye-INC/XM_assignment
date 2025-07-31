@@ -1,14 +1,14 @@
 package http_server
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/valyala/fasthttp"
 	"net/http"
 )
 
-func New(router fasthttp.RequestHandler, cert *tls.Certificate, listenerName string) *listener {
+func New(router http.Handler, cert *tls.Certificate, listenerName string) *listener {
 	contract := &listener{
 		name: listenerName,
 	}
@@ -17,7 +17,7 @@ func New(router fasthttp.RequestHandler, cert *tls.Certificate, listenerName str
 	if cert != nil {
 		certificates = []tls.Certificate{*cert}
 	}
-	contract.router = &fasthttp.Server{
+	contract.router = &http.Server{
 		TLSConfig: &tls.Config{
 			Certificates: certificates,
 		},
@@ -29,7 +29,7 @@ func New(router fasthttp.RequestHandler, cert *tls.Certificate, listenerName str
 
 type listener struct {
 	name   string
-	router *fasthttp.Server
+	router *http.Server
 }
 
 func (c *listener) Info() string {
@@ -37,10 +37,11 @@ func (c *listener) Info() string {
 }
 
 func (c *listener) Run(port int) (err error) {
+	c.router.Addr = fmt.Sprintf(":%d", port)
 	if len(c.router.TLSConfig.Certificates) > 0 {
-		err = c.router.ListenAndServeTLS(fmt.Sprintf(":%d", port), "", "")
+		err = c.router.ListenAndServeTLS("", "")
 	} else {
-		err = c.router.ListenAndServe(fmt.Sprintf(":%d", port))
+		err = c.router.ListenAndServe()
 	}
 
 	if errors.Is(err, http.ErrServerClosed) {
@@ -51,5 +52,5 @@ func (c *listener) Run(port int) (err error) {
 }
 
 func (c *listener) Stop() error {
-	return c.router.Shutdown()
+	return c.router.Shutdown(context.Background())
 }

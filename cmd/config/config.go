@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/caarlos0/env/v11"
 	"github.com/joho/godotenv"
+	"strings"
 )
 
 type Config struct {
@@ -16,6 +17,10 @@ type options struct {
 	DBUsername    string `env:"DB_USER,required"`
 	DBPassword    string `env:"DB_PASSWORD,required"`
 	PublicApiPort int    `env:"PUBLIC_API_PORT,required"`
+	JWTKey        string `env:"JWT_KEY,required"`
+
+	KafkaTopic string `env:"KAFKA_TOPIC"`
+	Brokers    string `env:"BROKERS"`
 }
 
 func LoadFromEnv(fallbackFile *string) (cfg *Config, err error) {
@@ -54,4 +59,14 @@ func (cfg *Config) DBPassword() string {
 
 func (cfg *Config) PublicApiPort() int {
 	return cfg.envLoaded.PublicApiPort
+}
+
+func (cfg *Config) JWTKey() string { return cfg.envLoaded.JWTKey }
+
+func (cfg *Config) Brokers() []string {
+	return strings.Split(cfg.envLoaded.Brokers, ",")
+}
+
+func (cfg *Config) KafkaTopic() string {
+	return cfg.envLoaded.KafkaTopic
 }

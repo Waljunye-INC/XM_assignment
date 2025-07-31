@@ -1,24 +1,25 @@
 package main
 
 import (
-	"OMS_assignment/internal/contract/oapi"
-	apartments3 "OMS_assignment/internal/contract/oapi/apartments"
-	buildings3 "OMS_assignment/internal/contract/oapi/buildings"
-	"OMS_assignment/internal/repository/apartments"
-	"OMS_assignment/internal/repository/buildings"
-	apartments2 "OMS_assignment/internal/usecases/apartments"
-	buildings2 "OMS_assignment/internal/usecases/buildings"
-	"OMS_assignment/libs/application"
-	listeners2 "OMS_assignment/libs/listeners"
+	"XM_assignment/internal/contract/oapi/authcontract"
+	"XM_assignment/internal/events"
+	authrepository "XM_assignment/internal/repositories/auth"
+	"XM_assignment/internal/usecases/auth"
 	"database/sql"
 	"flag"
 	"os"
 	"os/signal"
 
-	"OMS_assignment/cmd/config"
-	"OMS_assignment/utils"
+	"XM_assignment/cmd/config"
+	"XM_assignment/internal/contract/oapi"
+	"XM_assignment/internal/contract/oapi/companiescontract"
+	companiesrepository "XM_assignment/internal/repositories/companies"
+	"XM_assignment/internal/usecases/companies"
+	"XM_assignment/libs/application"
+	listeners2 "XM_assignment/libs/listeners"
+	"XM_assignment/utils"
 
-	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/rs/zerolog/log"
 )
 
@@ -35,7 +36,7 @@ func main() {
 		log.Fatal().Msg(err.Error())
 	}
 
-	dbConn, err := sql.Open("postgres", utils.PGDSN(
+	dbConn, err := sql.Open("mysql", utils.MysqlDSN(
 		cfg.DBName(),
 		cfg.DBHost(),
 		cfg.DBPort(),
@@ -67,20 +68,26 @@ func run(cfg *config.Config, db *sql.DB) error {
 }
 
 func build(cfg *config.Config, db *sql.DB) (app, error) {
-	buildingsRepository := buildings.NewBuildingsRepository(db)
-	apartmentsRepository := apartments.NewApartmentsRepository(db)
+	eventReciever := events.NewEventReciever()
+	eventsProducer := events.NewProducer(eventReciever, cfg.KafkaTopic(), cfg.Brokers())
 
-	buildingsUsecase := buildings2.NewBuildingsUsecase(buildingsRepository)
-	apartmentsUsecase := apartments2.NewApartmentsUsecase(apartmentsRepository)
+	companiesRepository := companiesrepository.NewRepository(db)
+	authRepository := authrepository.NewRepository(db)
 
-	buildingsContract := buildings3.NewBuildingsContract(buildingsUsecase)
-	apartmentsContract := apartments3.NewApartmentsContract(apartmentsUsecase)
+	companiesUseCase := companies.NewUseCase(companiesRepository, eventReciever)
+	authUsecase := auth.NewUseCase(cfg.JWTKey(), authRepository)
 
-	openAPI := oapi.New(nil, buildingsContract, apartmentsContract)
+	companiesContract := companiescontract.NewContract(companiesUseCase)
+	authContract := authcontract.NewContract(authUsecase)
+	openAPI := oapi.New(nil, cfg.JWTKey(), companiesContract, authContract)
 	listeners := map[int]listeners2.PortListener{
 		cfg.PublicApiPort(): openAPI,
 	}
 
-	result := application.New(listeners)
+	backgroundWorkers := []listeners2.BackgroundWorker{
+		eventsProducer,
+	}
+
+	result := application.New(listeners, backgroundWorkers)
 	return result, nil
 }

@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Buildings & Apartments API
+  title: Companies API
   version: "1.0.0"
   description: API for managing buildings and apartments
 
@@ -8,179 +8,135 @@ servers:
   - url: http://localhost:8012
 
 paths:
-  /buildings:
+  /companies/{uuid}:
     get:
-      summary: Get list of buildings
+      summary: Get company by id
+      tags:
+        - Companies
       responses:
         '200':
-          description: List of buildings
+          description:  Got
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Building'
-    post:
-      summary: Create or update a building
+                $ref: '#/components/schemas/Company'
+    delete:
+      summary: Delete company by id
+      tags:
+        - Companies
+      responses:
+        '200':
+          description: Successfully deleted
+  /companies/:
+    put:
+      summary: Update Company
+      tags:
+        - Companies
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Building'
+              $ref: '#/components/schemas/Company'
       responses:
         '200':
-          description: Building saved
-
-  /buildings/{id}:
-    get:
-      summary: Get building by ID
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-          required: true
-      responses:
-        '200':
-          description: Building data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Building'
-        '404':
-          description: Not found
-
-    delete:
-      summary: Delete a building
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-          required: true
-      responses:
-        '200':
-          description: Building deleted
-        '404':
-          description: Not found
-
-  /apartments:
-    get:
-      summary: Get list of apartments
-      responses:
-        '200':
-          description: List of apartments
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Apartment'
+          description: Updated
     post:
-      summary: Create or update an apartment
+      summary: Create Company
+      tags:
+        - Companies
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Apartment'
+              $ref: '#/components/schemas/Company'
       responses:
         '200':
-          description: Apartment saved
-
-  /apartments/{id}:
-    get:
-      summary: Get apartment by ID
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-          required: true
-      responses:
-        '200':
-          description: Apartment data
+          description: Updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Apartment'
-        '404':
-          description: Not found
-
-    delete:
-      summary: Delete an apartment
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-          required: true
+                $ref: '#/components/schemas/Company'
+  /auth/register:
+    post:
+      summary: Register User
+      tags:
+        - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialsRequest'
       responses:
         '200':
-          description: Apartment deleted
-        '404':
-          description: Not found
-
-  /apartments/building/{buildingId}:
-    get:
-      summary: Get apartments by building ID
-      parameters:
-        - in: path
-          name: buildingId
-          schema:
-            type: integer
-          required: true
+          description: Successfully registered
+  /auth/login:
+    put:
+      summary: Login User
+      tags:
+        - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialsRequest'
       responses:
         '200':
-          description: List of apartments
+          description: Successfully login
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Apartment'
-
+                $ref: '#/components/schemas/CredentialsResponse'
 components:
   schemas:
-    Building:
+    Company:
       type: object
       properties:
-        id:
-          type: integer
-          example: 1
+        uuid:
+          type: string
+          format: uuid
         name:
           type: string
-          example: "Sunshine Complex"
-        address:
+          example: "LLC XM"
+        description:
           type: string
-          example: "123 Sample St, City"
+          example: "Binance.com core partner"
+        employees_count:
+          type: integer
+          format: int32
+          example: 14003
+        is_registered:
+          type: boolean
+          example: true
+        type:
+          $ref: '#/components/schemas/CompanyType'
       required:
-        - id
+        - uuid
         - name
-        - address
-    Apartment:
+        - employees_count
+        - is_registered
+        - type
+    CompanyType:
+      type: string
+      enum:
+        - corporation
+        - non_profit
+        - cooperative
+        - sole_proprietorship
+      example: corporation
+    CredentialsRequest:
       type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        buildingID:
-          type: integer
-          example: 1
-        number:
-          type: string
-          example: "45"
-        floor:
-          type: integer
-          example: 5
-        sqMeters:
-          type: number
-          format: float
-          example: 38.5
       required:
-        - id
-        - buildingID
-        - number
-        - floor
-        - sqMeters
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    CredentialsResponse:
+      type: object
+      required:
+        - access_token
+      properties:
+        access_token:
+          type: string

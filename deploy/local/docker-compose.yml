@@ -1,18 +1,56 @@
 version: "3.8"
 
 services:
-  db:
-    image: postgres:15
-    container_name: buildings
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: testdb
+  service:
+    build:
+      context: ../../
+      dockerfile: deploy/Dockerfile
+    container_name: myservice
     ports:
-      - "5432:5432"
+      - "8012:8012"            # Пробрасывает порт наружу
+    env_file:
+      - ../../.env.docker                   # Передает все переменные из .env в контейнер
+    command: [ "./xm_assignment", "-cfg-file=/app/.env.docker" ] # Флаг, указывающий путь к .env внутри контейнера
+    restart: unless-stopped
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    command: --bind-address=0.0.0.0
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
 
 volumes:
-  pg_data:
+  mysql_data:
+  kafka_data:
+  zookeeper_data:
+  zookeeper_log:

@@ -1,19 +1,21 @@
-# Buildings & Apartments API
+# XM Assignment API
 
-A Go-based API service for building and apartment management using PostgreSQL as a data store.
+A Go-based API service for companies management with authentication using MySQL as a data store and Kafka for event processing.
 
 ## Features
 
-- CRUD operations for buildings and apartments
-- Retrieve apartments by building ID
-- PostgreSQL database integration
+- Authentication and authorization via JWT
+- CRUD operations for companies
+- MySQL database integration
+- Kafka event processing for specific operations
 - Configuration via environment variables or `.env` file
-- OpenAPI (Swagger) specification
+- OpenAPI specification
 
 ## Requirements
 
 - Go 1.24+
-- PostgreSQL 15+
+- MySQL 8+
+- Kafka (for advanced features)
 
 ## Getting Started
 
@@ -28,11 +30,14 @@ cp .env.template .env
 Example content (already in .env.template):
 
 ```env
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=testdb
-DB_USER=postgres
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=mydb
+DB_USER=user
 DB_PASSWORD=password
+JWT_KEY=mysecretkey
+KAFKA_BROKERS=localhost:9092
+KAFKA_TOPIC_COMPANIES=stark-topic
 PUBLIC_API_PORT=8012
 ```
 
@@ -56,10 +61,9 @@ The API server will start on the port specified in the `PUBLIC_API_PORT` environ
 
 The project includes a Makefile with the following commands:
 
-- `make test` - run tests
+- `make test` - run tests (WIP)
 - `make migrate-up` - apply database migrations
-- `make generate-models` - generate SQLBoiler models
-- `make generate-mocks` - generate test mocks
+- `make generate-mocks` - generate test mocks (WIP)
 
 ## Project Structure
 
@@ -68,10 +72,14 @@ cmd/
     main.go                  # Entry point
     config/                  # Configuration
 internal/
-    contract/oapi/          # HTTP handlers
-    repository/              # Data access (repositories and SQLBoiler models)
-    usecases/               # Business logic
-    domain/                 # Domain models
+    contract/oapi/           # HTTP handlers
+    repositories/            # Data access (repositories)
+        auth/                # Authentication repository
+        companies/           # Companies repository
+    usecases/                # Business logic
+        auth/                # Authentication use cases
+        companies/           # Companies use cases
+    events/                  # Kafka event processing
 libs/                       # Common libraries (HTTP server, listeners)
 migrations/                 # SQL migrations
 utils/                      # Utility functions
@@ -79,35 +87,35 @@ utils/                      # Utility functions
 ```
 
 ## API Endpoints
-[Postman Reference](https://oms999-6301.postman.co/workspace/OMS_assignment~251230bb-c018-4e54-b9ae-92431872fb81/collection/29502646-34be816b-2f58-4d02-911c-0ac97d310b5b?action=share&creator=29502646)
 
-### Buildings
+### Authentication
 
-- `GET /buildings` — Get all buildings
-- `POST /buildings` — Create or update a building
-- `GET /buildings/{id}` — Get a building by ID
-- `DELETE /buildings/{id}` — Delete a building by ID
+- `POST /auth/login` — User login, returns JWT token
+- `POST /auth/register` — Register a new user
 
-### Apartments
+### Companies
 
-- `GET /apartments` — Get all apartments
-- `POST /apartments` — Create or update an apartment
-- `GET /apartments/{id}` — Get an apartment by ID
-- `DELETE /apartments/{id}` — Delete an apartment by ID
-- `GET /apartments/building/{buildingId}` — Get all apartments in a specific building
+- `POST /companies` — Create a new company
+- `GET /companies/{uuid}` — Get a company by UUID
+- `PUT /companies` — Update a company
+- `DELETE /companies/{uuid}` — Delete a company by UUID
 
 ## Testing
 
-To run tests:
+WIP
+
+## Docker Support
+
+The project includes Docker and docker-compose support for easy setup:
 
 ```sh
-make test
+docker-compose up --build
 ```
 
-> Note: Ensure the database is running and test database credentials are configured through environment variables.
+This will start the API service with all necessary dependencies (MySQL, Kafka).
 
 ## API Documentation
 
 OpenAPI specification is available at `/docs/oapi/openapi.yaml`.
 
-_Test assignment for OMS_
+_Test assignment for XM_

@@ -1,44 +1,42 @@
 package oapi
 
 import (
-	"OMS_assignment/internal/contract/oapi/apartments"
-	"OMS_assignment/internal/contract/oapi/buildings"
 	"crypto/tls"
+	"github.com/go-chi/chi/v5"
 
-	"OMS_assignment/libs/http_server"
-	"OMS_assignment/libs/listeners"
+	"XM_assignment/internal/contract/oapi/authcontract"
+	"XM_assignment/internal/contract/oapi/companiescontract"
 
-	"github.com/gofiber/fiber/v2"
+	"XM_assignment/libs/http_server"
+	"XM_assignment/libs/listeners"
 )
 
-func New(tls *tls.Certificate, bc *buildings.Contract, ac *apartments.Contract) listeners.PortListener {
+func New(tls *tls.Certificate, jwtKey string, cc *companiescontract.Contract, ac *authcontract.Contract) listeners.PortListener {
 	cont := &contract{
-		bc: bc,
-		ac: ac,
+		companyContract: cc,
+		authContract:    ac,
 	}
 
-	app := fiber.New()
-	builds := app.Group("/buildings")
-	{
-		builds.Get("/", cont.bc.GetBuildings)
-		builds.Get("/:id", cont.bc.GetBuildingByID)
-		builds.Post("/", cont.bc.SetBuilding)
-		builds.Delete("/:id", cont.bc.DeleteBuilding)
-	}
+	app := chi.NewRouter()
+	app.Route("/companies", func(compRoute chi.Router) {
+		compRoute.Get("/{uuid}", cont.companyContract.GetCompany)
+		compRoute.Group(func(protecredCompRoute chi.Router) {
+			protecredCompRoute.Use(JWTAuthMiddleware(jwtKey))
+			protecredCompRoute.Post("/", cont.companyContract.CreateCompany)
+			protecredCompRoute.Put("/", cont.companyContract.UpdateCompany)
+			protecredCompRoute.Delete("/{uuid}", cont.companyContract.DeleteCompany)
+		})
+	})
 
-	apparts := app.Group("/apartments")
-	{
-		apparts.Get("/", cont.ac.GetApartments)
-		apparts.Get("/:id", cont.ac.GetApartmentByID)
-		apparts.Get("/building/:buildingId", cont.ac.GetApartmentsByBuildingID)
-		apparts.Post("/", cont.ac.SetApartment)
-		apparts.Delete("/:id", cont.ac.DeleteApartment)
-	}
+	app.Route("/auth", func(authRoute chi.Router) {
+		authRoute.Post("/register", cont.authContract.Register)
+		authRoute.Put("/login", cont.authContract.Login)
+	})
 
-	return http_server.New(app.Handler(), tls, "open_api")
+	return http_server.New(app, tls, "open_api")
 }
 
 type contract struct {
-	bc *buildings.Contract
-	ac *apartments.Contract
+	companyContract *companiescontract.Contract
+	authContract    *authcontract.Contract
 }
